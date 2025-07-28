@@ -1,0 +1,82 @@
+
+services:
+  # --- BANCO DE DADOS RELACIONAL ---
+  db:
+    image: postgres:15-alpine
+    container_name: mkp_postgres_db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- UI PARA O POSTGRESQL ---
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: mkp_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@email.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # --- BANCO DE DADOS NOSQL ---
+  mongodb:
+    image: mongo:latest
+    container_name: mkp_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  # --- UI PARA O MONGODB ---
+  mongo-express:
+    image: mongo-express
+    container_name: mkp_mongo_express
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: 123
+      ME_CONFIG_BASICAUTH_USERNAME: admin_ui
+      ME_CONFIG_BASICAUTH_PASSWORD: admin_ui_password
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  # --- NOSSA APLICAÇÃO GO ---
+  app:
+    container_name: mkp_go_app
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - mongodb
+    environment:
+      # Variáveis do PostgreSQL (AJUSTADAS)
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: root 
+      # Variável de Conexão com o MongoDB (AJUSTADA)
+      MONGO_URI: "mongodb://root:123@mongodb:27017/"
+    restart: on-failure
+
+# Declaração dos volumes para persistência dos dados
+volumes:
+  postgres_data:
+  mongo_data:
