@@ -6,18 +6,19 @@ import (
 	"github.com/BunocGomes/mkp-back/helper"
 	"github.com/BunocGomes/mkp-back/routes"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Atenção: Não foi possível carregar o arquivo .env")
-	}
+	// A chamada volta a ser simples, sem argumentos.
 	helper.InitializeDatabase()
+
 	log.Println("Iniciando o servidor web...")
 	router := gin.Default()
-	routes.SetupUserRoutes(router)
+
+	// Configuração das rotas (pode precisar de ajuste se usar injeção de dependência)
+	routes.UserRoutes(router)
+	routes.SetupProfileRoutes(router)
+
 	log.Println("Servidor iniciado em http://localhost:8080")
 	router.Run(":8080")
 }

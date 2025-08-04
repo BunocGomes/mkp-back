@@ -13,12 +13,6 @@ type User struct {
 	Digest Digest `gorm:"foreignKey:UserID" json:"digest"`
 }
 
-type Perfil struct {
-	gorm.Model
-	UsuarioID uint   `json:"usuario_id"`
-	Role      string `gorm:"type:varchar(50);not null;default:'aluno'" json:"role"`
-}
-
 type Digest struct {
 	UserID       uint   `gorm:"primaryKey"`
 	Password     string `gorm:"-" json:"-"`

@@ -16,20 +16,11 @@ func InitializeDatabase() {
 	schemaName := "marketplace"
 	createSchema(database.DB, schemaName)
 
-	// --- REMOVA OU COMENTE ESTA LINHA ---
-	// A configuração TablePrefix no gorm.Config já cuida disso de forma mais eficaz.
-	/*
-		if err := database.DB.Exec(fmt.Sprintf("SET search_path TO %s", schemaName)).Error; err != nil {
-			log.Fatalf("Falha ao definir o search_path: %v", err)
-		}
-	*/
-
 	migrateModels(database.DB)
+
 	SeedData(database.DB)
 	log.Println("Inicialização do banco de dados concluída com sucesso.")
 }
-
-// O resto do arquivo (createSchema, migrateModels, etc.) continua igual.
 
 func createSchema(db *gorm.DB, schemaName string) {
 	if err := db.Exec("CREATE SCHEMA IF NOT EXISTS " + schemaName).Error; err != nil {
@@ -44,7 +35,11 @@ func migrateModels(db *gorm.DB) {
 		&models.User{},
 		&models.Perfil{},
 		&models.Digest{},
+		&models.Skill{},
+		&models.PortfolioItem{},
+		&models.SocialLink{},
 	)
+
 	if err != nil {
 		log.Fatalf("Erro durante a migração: %v", err)
 	}

@@ -12,7 +12,6 @@ type RegisterUserDTO struct {
 type UpdateUserDTO struct {
 	Nome  *string `json:"nome"`
 	Email *string `json:"email"`
-	Role  *string `json:"role"`
 }
 
 type PerfilResponseDTO struct {

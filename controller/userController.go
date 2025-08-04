@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/BunocGomes/mkp-back/dto"
+	"github.com/BunocGomes/mkp-back/helper"
 	"github.com/BunocGomes/mkp-back/service"
 	"github.com/gin-gonic/gin"
 )
@@ -78,6 +79,20 @@ func UpdateUser(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
+
+	token := helper.ExtractToken(c)
+
+	// 2. Verifica se o usuário tem a permissão de SuperAdmin
+	isAllowed, err := helper.IsSuperAdmin(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido ou expirado"})
+		return
+	}
+	if !isAllowed {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Acesso negado. Apenas SuperAdmins podem deletar usuários."})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
