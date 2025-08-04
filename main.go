@@ -1,25 +1,23 @@
 package main
 
 import (
-	"github.com/BunocGomes/MKP-back/database" 
-	
+	"log"
+
+	"github.com/BunocGomes/mkp-back/helper"
+	"github.com/BunocGomes/mkp-back/routes"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Conecta aos bancos de dados
-	database.Connect()      // Conecta ao PostgreSQL
-	database.ConnectMongo() // Conecta ao MongoDB
-
-	// Inicia o servidor Gin
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Atenção: Não foi possível carregar o arquivo .env")
+	}
+	helper.InitializeDatabase()
+	log.Println("Iniciando o servidor web...")
 	router := gin.Default()
-
-	// Rota de teste para verificar se o servidor está no ar
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
-	router.Run(":8080") // Escuta e serve na porta 8080
+	routes.SetupUserRoutes(router)
+	log.Println("Servidor iniciado em http://localhost:8080")
+	router.Run(":8080")
 }

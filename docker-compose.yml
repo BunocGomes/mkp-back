@@ -1,33 +1,27 @@
-
 services:
-  # --- BANCO DE DADOS RELACIONAL ---
   db:
     image: postgres:15-alpine
     container_name: mkp_postgres_db
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: root
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
-
-  # --- UI PARA O POSTGRESQL ---
   pgadmin:
     image: dpage/pgadmin4
     container_name: mkp_pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: user@email.com
-      PGADMIN_DEFAULT_PASSWORD: root
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
       - "5050:80"
     depends_on:
       - db
     restart: unless-stopped
-
-  # --- BANCO DE DADOS NOSQL ---
   mongodb:
     image: mongo:latest
     container_name: mkp_mongodb
@@ -39,15 +33,11 @@ services:
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
-
-  # --- UI PARA O MONGODB ---
   mongo-express:
     image: mongo-express
     container_name: mkp_mongo_express
     environment:
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: 123
+      ME_CONFIG_MONGODB_URL: "mongodb://root:123@mongodb:27017/?authSource=admin"
       ME_CONFIG_BASICAUTH_USERNAME: admin_ui
       ME_CONFIG_BASICAUTH_PASSWORD: admin_ui_password
     ports:
@@ -55,7 +45,7 @@ services:
     depends_on:
       - mongodb
     restart: unless-stopped
-
+  # ... (outros serviços)
   # --- NOSSA APLICAÇÃO GO ---
   app:
     container_name: mkp_go_app
@@ -66,17 +56,16 @@ services:
       - db
       - mongodb
     environment:
-      # Variáveis do PostgreSQL (AJUSTADAS)
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: root 
-      # Variável de Conexão com o MongoDB (AJUSTADA)
-      MONGO_URI: "mongodb://root:123@mongodb:27017/"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      # AJUSTE FINAL AQUI
+      MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/?authSource=admin"
+      JWT_SECRET: ${JWT_SECRET}
     restart: on-failure
-
-# Declaração dos volumes para persistência dos dados
+# ... (resto do arquivo)
 volumes:
   postgres_data:
   mongo_data:
