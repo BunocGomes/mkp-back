@@ -32,10 +32,12 @@ func createSchema(db *gorm.DB, schemaName string) {
 func migrateModels(db *gorm.DB) {
 	log.Println("Iniciando migração dos modelos...")
 	err := db.AutoMigrate(
+		&models.Skill{},
+		&models.Empresa{},
 		&models.User{},
 		&models.Perfil{},
 		&models.Digest{},
-		&models.Skill{},
+
 		&models.PortfolioItem{},
 		&models.SocialLink{},
 	)

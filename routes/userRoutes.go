@@ -10,7 +10,7 @@ func UserRoutes(router *gin.Engine) {
 	userGroup := router.Group("/api/v1/users")
 	userGroup.Use(middleware.AuthMiddleware())
 	{
-		userGroup.POST("/", controller.CreateUser)
+
 		userGroup.GET("/", controller.GetAllUsers)
 		userGroup.GET("/:id", controller.GetUser)
 		userGroup.PUT("/:id", controller.UpdateUser)
@@ -25,6 +25,11 @@ func UserRoutes(router *gin.Engine) {
 	createUserGroup := router.Group("/api/v1/users")
 	{
 		createUserGroup.POST("/", controller.CreateUser)
+	}
+
+	createEnterpriseGroup := router.Group("/api/v1/enterprise")
+	{
+		createEnterpriseGroup.POST("/register", controller.CreateEmpresaAccount)
 	}
 
 }
