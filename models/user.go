@@ -7,10 +7,11 @@ import (
 
 type User struct {
 	gorm.Model
-	Nome   string `json:"nome"`
-	Email  string `gorm:"unique" json:"email"`
-	Perfil Perfil `gorm:"foreignKey:UsuarioID" json:"perfil"`
-	Digest Digest `gorm:"foreignKey:UserID" json:"digest"`
+	Nome      string `json:"nome"`
+	Email     string `gorm:"unique" json:"email"`
+	EmpresaID *uint  `gorm:"index" json:"empresa_id"`
+	Perfil    Perfil `gorm:"foreignKey:UsuarioID" json:"perfil"`
+	Digest    Digest `gorm:"foreignKey:UserID" json:"digest"`
 }
 
 type Digest struct {
