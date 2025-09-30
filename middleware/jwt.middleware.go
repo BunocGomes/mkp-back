@@ -12,31 +12,36 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Cabeçalho de autorização não encontrado"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Cabeçalho de autorização não fornecido"})
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Formato do cabeçalho de autorização inválido"})
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Formato do token de autorização inválido"})
 			return
 		}
 
-		tokenString := parts[1]
 		claims, err := utils.VerifyJWT(tokenString)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
 			return
 		}
 
-		// Extrai o user_id do token e o coloca no contexto da requisição
-		userIDFloat, ok := claims["user_id"].(float64)
-		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user_id inválido no token"})
-			return
-		}
+		// --- LÓGICA ATUALIZADA AQUI ---
+		userID := uint(claims["user_id"].(float64))
+		role := claims["role"].(string)
 
-		c.Set("userID", uint(userIDFloat))
+		c.Set("userId", userID)
+		c.Set("role", role)
+
+		// Verifica se a claim "empresa_id" existe no token e a define no contexto
+		if empresaIDClaim, exists := claims["empresa_id"]; exists {
+			empresaID := uint(empresaIDClaim.(float64))
+			c.Set("empresaId", empresaID) // O controller vai ler daqui!
+		}
+		// ---------------------------------
+
 		c.Next()
 	}
 }

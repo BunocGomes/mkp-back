@@ -18,6 +18,7 @@ func main() {
 	// Configuração das rotas (pode precisar de ajuste se usar injeção de dependência)
 	routes.UserRoutes(router)
 	routes.SetupProfileRoutes(router)
+	routes.SetupProjectRoutes(router)
 
 	log.Println("Servidor iniciado em http://localhost:8080")
 	router.Run(":8080")
