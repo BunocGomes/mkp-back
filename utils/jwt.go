@@ -22,7 +22,7 @@ func init() {
 }
 
 // GenerateJWT cria o jwt
-func GenerateJWT(userID uint, role string) (string, error) {
+func GenerateJWT(userID uint, role string, empresaID *uint) (string, error) {
 	// Aumentei a expiração para 1 ano (aproximadamente)
 	expirationTime := time.Now().Add(365 * 24 * time.Hour)
 
@@ -32,6 +32,9 @@ func GenerateJWT(userID uint, role string) (string, error) {
 		"exp":     expirationTime.Unix(),
 	}
 
+	if empresaID != nil {
+		claims["empresa_id"] = *empresaID
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtSecret)
 	if err != nil {

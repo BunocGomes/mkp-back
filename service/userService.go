@@ -143,7 +143,7 @@ func Login(loginDTO dto.LoginDTO) (string, error) {
 
 	// 3. Gerar o token JWT
 	// Passamos o ID do usuário e o seu papel (role) do perfil
-	token, err := utils.GenerateJWT(user.ID, user.Perfil.Role)
+	token, err := utils.GenerateJWT(user.ID, user.Perfil.Role, user.EmpresaID)
 	if err != nil {
 		return "", err
 	}
