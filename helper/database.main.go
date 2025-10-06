@@ -38,6 +38,7 @@ func migrateModels(db *gorm.DB) {
 		&models.Perfil{},
 		&models.Digest{},
 		&models.Projeto{},
+		&models.Proposta{},
 
 		&models.PortfolioItem{},
 		&models.SocialLink{},
