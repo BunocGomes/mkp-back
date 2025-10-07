@@ -128,21 +128,16 @@ func mapUserToResponseDTO(user models.User) dto.UserResponseDTO {
 func Login(loginDTO dto.LoginDTO) (string, error) {
 	var user models.User
 
-	// 1. Encontrar o usuário pelo e-mail, carregando Perfil e Digest
 	err := database.DB.Preload("Perfil").Preload("Digest").Where("email = ?", loginDTO.Email).First(&user).Error
 	if err != nil {
-		// Se não encontrou o registro, retorna um erro genérico de credenciais
+
 		return "", errors.New("credenciais inválidas")
 	}
 
-	// 2. Verificar se a senha está correta
-	// Usamos a função do nosso pacote utils
 	if !utils.CheckPasswordHash(loginDTO.Password, user.Digest.PasswordHash) {
 		return "", errors.New("credenciais inválidas")
 	}
 
-	// 3. Gerar o token JWT
-	// Passamos o ID do usuário e o seu papel (role) do perfil
 	token, err := utils.GenerateJWT(user.ID, user.Perfil.Role, user.EmpresaID)
 	if err != nil {
 		return "", err

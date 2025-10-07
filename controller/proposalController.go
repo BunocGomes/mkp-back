@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateProposta manipula a criação de uma nova proposta por um freelancer.
 func CreateProposta(c *gin.Context) {
 	freelancerID, exists := c.Get("userId")
 	if !exists {
@@ -32,7 +31,6 @@ func CreateProposta(c *gin.Context) {
 	c.JSON(http.StatusCreated, proposta)
 }
 
-// GetPropostasByProjeto manipula a listagem de propostas de um projeto para a empresa dona.
 func GetPropostasByProjeto(c *gin.Context) {
 	empresaID, exists := c.Get("empresaId")
 	if !exists {
@@ -76,7 +74,6 @@ func UpdateProposta(c *gin.Context) {
 
 	proposta, err := service.UpdateProposta(uint(propostaID), freelancerID.(uint), input)
 	if err != nil {
-		// Usa StatusForbidden para erros de permissão ou regra de negócio
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -84,7 +81,6 @@ func UpdateProposta(c *gin.Context) {
 	c.JSON(http.StatusOK, proposta)
 }
 
-// DeleteProposta manipula a exclusão de uma proposta.
 func DeleteProposta(c *gin.Context) {
 	freelancerID, exists := c.Get("userId")
 	if !exists {
@@ -105,4 +101,26 @@ func DeleteProposta(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Proposta deletada com sucesso"})
+}
+
+func AcceptProposta(c *gin.Context) {
+	empresaID, exists := c.Get("empresaId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "ID da empresa não encontrado no token"})
+		return
+	}
+
+	propostaID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID da proposta inválido"})
+		return
+	}
+
+	contrato, err := service.AceitarProposta(uint(propostaID), empresaID.(uint))
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, contrato)
 }

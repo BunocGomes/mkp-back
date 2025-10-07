@@ -9,13 +9,12 @@ import (
 	"github.com/BunocGomes/mkp-back/models"
 )
 
-// CreateProject cria um novo projeto para uma empresa.
 func CreateProject(input dto.CreateProjectDTO, empresaID uint) (dto.ProjectResponseDTO, error) {
 	projeto := models.Projeto{
 		Titulo:    input.Titulo,
 		Descricao: input.Descricao,
 		Orcamento: input.Orcamento,
-		EmpresaID: empresaID, // Associa o projeto à empresa do usuário logado
+		EmpresaID: empresaID,
 	}
 
 	if err := database.DB.Create(&projeto).Error; err != nil {
@@ -36,7 +35,6 @@ func CreateProject(input dto.CreateProjectDTO, empresaID uint) (dto.ProjectRespo
 	return response, nil
 }
 
-// GetProjectsByEmpresaID retorna todos os projetos de uma empresa específica.
 func GetProjectsByEmpresaID(empresaID uint) ([]dto.ProjectResponseDTO, error) {
 	var projetos []models.Projeto
 	if err := database.DB.Where("empresa_id = ?", empresaID).Order("created_at desc").Find(&projetos).Error; err != nil {
@@ -46,20 +44,20 @@ func GetProjectsByEmpresaID(empresaID uint) ([]dto.ProjectResponseDTO, error) {
 	var response []dto.ProjectResponseDTO
 	for _, p := range projetos {
 		response = append(response, dto.ProjectResponseDTO{
-			ID:        p.ID,
-			Titulo:    p.Titulo,
-			Descricao: p.Descricao,
-			Status:    p.Status,
-			Orcamento: p.Orcamento,
-			EmpresaID: p.EmpresaID,
-			CreatedAt: p.CreatedAt,
-			UpdatedAt: p.UpdatedAt,
+			ID:          p.ID,
+			Titulo:      p.Titulo,
+			Descricao:   p.Descricao,
+			Status:      p.Status,
+			Orcamento:   p.Orcamento,
+			EmpresaID:   p.EmpresaID,
+			NomeEmpresa: p.Empresa.NomeFantasia,
+			CreatedAt:   p.CreatedAt,
+			UpdatedAt:   p.UpdatedAt,
 		})
 	}
 	return response, nil
 }
 
-// GetProjectByID retorna um projeto específico, verificando a posse.
 func GetProjectByID(projectID, empresaID uint) (dto.ProjectResponseDTO, error) {
 	var projeto models.Projeto
 	if err := database.DB.First(&projeto, projectID).Error; err != nil {
@@ -71,20 +69,20 @@ func GetProjectByID(projectID, empresaID uint) (dto.ProjectResponseDTO, error) {
 	}
 
 	response := dto.ProjectResponseDTO{
-		ID:        projeto.ID,
-		Titulo:    projeto.Titulo,
-		Descricao: projeto.Descricao,
-		Status:    projeto.Status,
-		Orcamento: projeto.Orcamento,
-		EmpresaID: projeto.EmpresaID,
-		CreatedAt: projeto.CreatedAt,
-		UpdatedAt: projeto.UpdatedAt,
+		ID:          projeto.ID,
+		Titulo:      projeto.Titulo,
+		Descricao:   projeto.Descricao,
+		Status:      projeto.Status,
+		Orcamento:   projeto.Orcamento,
+		EmpresaID:   projeto.EmpresaID,
+		NomeEmpresa: projeto.Empresa.NomeFantasia,
+		CreatedAt:   projeto.CreatedAt,
+		UpdatedAt:   projeto.UpdatedAt,
 	}
 
 	return response, nil
 }
 
-// UpdateProject atualiza um projeto, verificando a posse.
 func UpdateProject(projectID, empresaID uint, input dto.UpdateProjectDTO) (dto.ProjectResponseDTO, error) {
 	var projeto models.Projeto
 	if err := database.DB.First(&projeto, projectID).Error; err != nil {
@@ -102,7 +100,6 @@ func UpdateProject(projectID, empresaID uint, input dto.UpdateProjectDTO) (dto.P
 	return GetProjectByID(projectID, empresaID)
 }
 
-// DeleteProject deleta um projeto, verificando a posse.
 func DeleteProject(projectID, empresaID uint) error {
 	var projeto models.Projeto
 	if err := database.DB.First(&projeto, projectID).Error; err != nil {
@@ -118,4 +115,38 @@ func DeleteProject(projectID, empresaID uint) error {
 	}
 
 	return nil
+}
+
+func SearchOpenProjects(searchTerm string, page int, pageSize int) ([]dto.ProjectResponseDTO, error) {
+	var projetos []models.Projeto
+
+	query := database.DB.Preload("Empresa").Where("status = ?", "aberto")
+
+	if searchTerm != "" {
+		query = query.Where("titulo ILIKE ?", "%"+searchTerm+"%")
+	}
+
+	offset := (page - 1) * pageSize
+
+	err := query.Order("created_at desc").Offset(offset).Limit(pageSize).Find(&projetos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var response []dto.ProjectResponseDTO
+	for _, p := range projetos {
+		response = append(response, dto.ProjectResponseDTO{
+			ID:          p.ID,
+			Titulo:      p.Titulo,
+			Descricao:   p.Descricao,
+			Status:      p.Status,
+			Orcamento:   p.Orcamento,
+			EmpresaID:   p.EmpresaID,
+			NomeEmpresa: p.Empresa.NomeFantasia,
+			CreatedAt:   p.CreatedAt,
+			UpdatedAt:   p.UpdatedAt,
+		})
+	}
+
+	return response, nil
 }

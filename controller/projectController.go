@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateProject manipula a criação de um novo projeto.
 func CreateProject(c *gin.Context) {
 	empresaID, exists := c.Get("empresaId")
 	if !exists {
@@ -32,15 +31,40 @@ func CreateProject(c *gin.Context) {
 	c.JSON(http.StatusCreated, projeto)
 }
 
-// GetProjectsForEmpresa manipula a listagem de projetos da empresa logada.
-func GetProjectsForEmpresa(c *gin.Context) {
-	empresaID, exists := c.Get("empresaId")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "ID da empresa não encontrado no token"})
+func ListProjects(c *gin.Context) {
+	role, _ := c.Get("role")
+
+	// Se for uma empresa, retorna apenas os projetos dela
+	if role.(string) == "empresa" {
+		empresaID, exists := c.Get("empresaId")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "ID da empresa não encontrado no token"})
+			return
+		}
+
+		projetos, err := service.GetProjectsByEmpresaID(empresaID.(uint))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, projetos)
 		return
 	}
 
-	projetos, err := service.GetProjectsByEmpresaID(empresaID.(uint))
+	// Para freelancers e outros, retorna a busca pública
+	searchTerm := c.DefaultQuery("search", "")
+
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	projetos, err := service.SearchOpenProjects(searchTerm, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,7 +73,6 @@ func GetProjectsForEmpresa(c *gin.Context) {
 	c.JSON(http.StatusOK, projetos)
 }
 
-// GetProjectByID manipula a busca por um projeto específico.
 func GetProjectByID(c *gin.Context) {
 	empresaID, exists := c.Get("empresaId")
 	if !exists {
@@ -72,7 +95,6 @@ func GetProjectByID(c *gin.Context) {
 	c.JSON(http.StatusOK, projeto)
 }
 
-// UpdateProject manipula a atualização de um projeto.
 func UpdateProject(c *gin.Context) {
 	empresaID, exists := c.Get("empresaId")
 	if !exists {
@@ -101,7 +123,6 @@ func UpdateProject(c *gin.Context) {
 	c.JSON(http.StatusOK, projeto)
 }
 
-// DeleteProject manipula a exclusão de um projeto.
 func DeleteProject(c *gin.Context) {
 	empresaID, exists := c.Get("empresaId")
 	if !exists {
