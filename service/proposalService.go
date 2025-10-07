@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"time"
 
 	"github.com/BunocGomes/mkp-back/database"
 	"github.com/BunocGomes/mkp-back/dto"
@@ -9,9 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// CreateProposta cria uma nova proposta de um freelancer para um projeto.
 func CreateProposta(input dto.CreatePropostaDTO, freelancerID uint) (dto.PropostaResponseDTO, error) {
-	// Regra de negócio 1: Verificar se o projeto existe e está aberto
 	var projeto models.Projeto
 	if err := database.DB.First(&projeto, input.ProjetoID).Error; err != nil {
 		return dto.PropostaResponseDTO{}, errors.New("projeto não encontrado")
@@ -20,7 +19,6 @@ func CreateProposta(input dto.CreatePropostaDTO, freelancerID uint) (dto.Propost
 		return dto.PropostaResponseDTO{}, errors.New("este projeto não está mais aceitando propostas")
 	}
 
-	// Regra de negócio 2: Verificar se o freelancer já não enviou uma proposta
 	var existente models.Proposta
 	err := database.DB.Where("projeto_id = ? AND freelancer_id = ?", input.ProjetoID, freelancerID).First(&existente).Error
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -39,7 +37,6 @@ func CreateProposta(input dto.CreatePropostaDTO, freelancerID uint) (dto.Propost
 		return dto.PropostaResponseDTO{}, err
 	}
 
-	// Para a resposta, vamos buscar o usuário para incluir o nome
 	var freelancer models.User
 	database.DB.First(&freelancer, freelancerID)
 
@@ -63,9 +60,7 @@ func CreateProposta(input dto.CreatePropostaDTO, freelancerID uint) (dto.Propost
 	return response, nil
 }
 
-// GetPropostasByProjetoID retorna as propostas de um projeto para o dono da empresa.
 func GetPropostasByProjetoID(projetoID, empresaID uint) ([]dto.PropostaResponseDTO, error) {
-	// Segurança: Verificar se a empresa que está pedindo é a dona do projeto
 	var projeto models.Projeto
 	if err := database.DB.Select("empresa_id").First(&projeto, projetoID).Error; err != nil {
 		return nil, errors.New("projeto não encontrado")
@@ -75,7 +70,6 @@ func GetPropostasByProjetoID(projetoID, empresaID uint) ([]dto.PropostaResponseD
 	}
 
 	var propostas []models.Proposta
-	// Usamos Preload para carregar os dados do Freelancer (que é um User) junto com a proposta
 	if err := database.DB.Preload("Freelancer").Where("projeto_id = ?", projetoID).Find(&propostas).Error; err != nil {
 		return nil, err
 	}
@@ -109,17 +103,14 @@ func UpdateProposta(propostaID uint, freelancerID uint, input dto.UpdateProposta
 		return dto.PropostaResponseDTO{}, errors.New("proposta não encontrada")
 	}
 
-	// Segurança: Apenas o dono da proposta pode atualizá-la.
 	if proposta.FreelancerID != freelancerID {
 		return dto.PropostaResponseDTO{}, errors.New("acesso negado: você não é o autor desta proposta")
 	}
 
-	// Regra de Negócio: Proposta só pode ser alterada se ainda estiver com status "enviada".
 	if proposta.Status != "enviada" {
 		return dto.PropostaResponseDTO{}, errors.New("esta proposta não pode mais ser editada, pois já foi visualizada ou respondida")
 	}
 
-	// Atualiza apenas os campos que foram fornecidos no DTO
 	if input.ValorProposto != nil {
 		proposta.ValorProposto = *input.ValorProposto
 	}
@@ -134,11 +125,9 @@ func UpdateProposta(propostaID uint, freelancerID uint, input dto.UpdateProposta
 		return dto.PropostaResponseDTO{}, err
 	}
 
-	// Para a resposta, vamos buscar o usuário para incluir o nome
 	var freelancer models.User
 	database.DB.First(&freelancer, freelancerID)
 
-	// Reutiliza a lógica de formatação de resposta
 	response := dto.PropostaResponseDTO{
 		ID:            proposta.ID,
 		ValorProposto: proposta.ValorProposto,
@@ -159,19 +148,16 @@ func UpdateProposta(propostaID uint, freelancerID uint, input dto.UpdateProposta
 	return response, nil
 }
 
-// DeleteProposta remove uma proposta do sistema.
 func DeleteProposta(propostaID uint, freelancerID uint) error {
 	var proposta models.Proposta
 	if err := database.DB.First(&proposta, propostaID).Error; err != nil {
 		return errors.New("proposta não encontrada")
 	}
 
-	// Segurança: Apenas o dono da proposta pode deletá-la.
 	if proposta.FreelancerID != freelancerID {
 		return errors.New("acesso negado: você não é o autor desta proposta")
 	}
 
-	// Regra de Negócio: Proposta só pode ser deletada se ainda estiver com status "enviada".
 	if proposta.Status != "enviada" {
 		return errors.New("esta proposta não pode mais ser deletada")
 	}
@@ -181,4 +167,80 @@ func DeleteProposta(propostaID uint, freelancerID uint) error {
 	}
 
 	return nil
+}
+
+func AceitarProposta(propostaID uint, empresaID uint) (dto.ContratoResponseDTO, error) {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return dto.ContratoResponseDTO{}, tx.Error
+	}
+
+	var proposta models.Proposta
+	if err := tx.Preload("Projeto").First(&proposta, propostaID).Error; err != nil {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, errors.New("proposta não encontrada")
+	}
+
+	if proposta.Projeto.EmpresaID != empresaID {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, errors.New("acesso negado: este projeto não pertence à sua empresa")
+	}
+
+	if proposta.Status != "enviada" || proposta.Projeto.Status != "aberto" {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, errors.New("esta proposta ou projeto não está mais disponível para contratação")
+	}
+
+	contrato := models.Contrato{
+		ValorFinal:      proposta.ValorProposto,
+		DataInicio:      time.Now(),
+		DataFimPrevista: time.Now().AddDate(0, 0, proposta.PrazoEstimado),
+		Status:          "ativo",
+		ProjetoID:       proposta.ProjetoID,
+		EmpresaID:       empresaID,
+		FreelancerID:    proposta.FreelancerID,
+		PropostaID:      proposta.ID,
+	}
+	if err := tx.Create(&contrato).Error; err != nil {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, err
+	}
+
+	if err := tx.Model(&proposta).Update("status", "aceita").Error; err != nil {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, err
+	}
+
+	if err := tx.Model(&models.Projeto{}).Where("id = ?", proposta.ProjetoID).Update("status", "em_andamento").Error; err != nil {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, err
+	}
+
+	if err := tx.Model(&models.Proposta{}).Where("projeto_id = ? AND id != ?", proposta.ProjetoID, proposta.ID).Update("status", "recusada").Error; err != nil {
+		tx.Rollback()
+		return dto.ContratoResponseDTO{}, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return dto.ContratoResponseDTO{}, err
+	}
+
+	var freelancer models.User
+	var empresa models.Empresa
+	database.DB.First(&freelancer, contrato.FreelancerID)
+	database.DB.First(&empresa, contrato.EmpresaID)
+
+	response := dto.ContratoResponseDTO{
+		ID:              contrato.ID,
+		ValorFinal:      contrato.ValorFinal,
+		DataInicio:      contrato.DataInicio,
+		DataFimPrevista: contrato.DataFimPrevista,
+		Status:          contrato.Status,
+		ProjetoID:       contrato.ProjetoID,
+		ProjetoTitulo:   proposta.Projeto.Titulo,
+		EmpresaNome:     empresa.NomeFantasia,
+		FreelancerNome:  freelancer.Nome,
+	}
+
+	return response, nil
 }

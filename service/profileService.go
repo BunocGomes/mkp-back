@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetProfileByUserID busca um perfil completo pelo ID do usuário.
 func GetProfileByUserID(userID uint) (dto.ProfileResponseDTO, error) {
 	var user models.User
 	err := database.DB.
@@ -26,14 +25,12 @@ func GetProfileByUserID(userID uint) (dto.ProfileResponseDTO, error) {
 		return dto.ProfileResponseDTO{}, err
 	}
 
-	// Log de depuração para ver o que o GORM carregou
 	log.Printf("Dados carregados do banco: User.ID=%d, Perfil.ID=%d, Skills=%d, PortfolioItems=%d, SocialLinks=%d",
 		user.ID, user.Perfil.ID, len(user.Perfil.Skills), len(user.Perfil.PortfolioItems), len(user.Perfil.SocialLinks))
 
 	return mapProfileToResponseDTO(user), nil
 }
 
-// UpdateProfile atualiza o perfil de um usuário dentro de uma transação.
 func UpdateProfile(userID uint, profileDTO dto.UpdateProfileDTO) (dto.ProfileResponseDTO, error) {
 	log.Printf("Iniciando atualização para o usuário ID: %d", userID)
 	log.Printf("Dados recebidos (DTO): %+v", profileDTO)
@@ -135,7 +132,6 @@ func UpdateProfile(userID uint, profileDTO dto.UpdateProfileDTO) (dto.ProfileRes
 	return GetProfileByUserID(userID)
 }
 
-// mapProfileToResponseDTO é uma função auxiliar para mapear os modelos para a resposta.
 func mapProfileToResponseDTO(user models.User) dto.ProfileResponseDTO {
 	var skillsDTO []dto.SkillDTO
 	for _, s := range user.Perfil.Skills {

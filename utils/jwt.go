@@ -11,8 +11,6 @@ import (
 
 var jwtSecret []byte
 
-// init é executado automaticamente quando o pacote é carregado.
-// Usamos para carregar a chave secreta e falhar rapidamente se ela não estiver definida.
 func init() {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
@@ -21,9 +19,7 @@ func init() {
 	jwtSecret = []byte(secret)
 }
 
-// GenerateJWT cria o jwt
 func GenerateJWT(userID uint, role string, empresaID *uint) (string, error) {
-	// Aumentei a expiração para 1 ano (aproximadamente)
 	expirationTime := time.Now().Add(365 * 24 * time.Hour)
 
 	claims := jwt.MapClaims{
@@ -47,7 +43,6 @@ var ErrInvalidToken = errors.New("invalid token")
 
 func VerifyJWT(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
 		}
@@ -58,7 +53,6 @@ func VerifyJWT(tokenString string) (jwt.MapClaims, error) {
 		return nil, err
 	}
 
-	// Extract claims if token is valid
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}

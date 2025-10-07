@@ -14,5 +14,6 @@ func SetupProposaltRoutes(router *gin.Engine) {
 		proposal.PUT("/:id", controller.UpdateProposta)
 		proposal.DELETE("/:id", controller.DeleteProposta)
 		proposal.GET("/:id/propostas", controller.GetPropostasByProjeto)
+		proposal.POST("/:id/accept", controller.AcceptProposta)
 	}
 }
