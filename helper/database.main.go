@@ -11,7 +11,7 @@ import (
 
 func InitializeDatabase() {
 	database.ConnectDB()
-	database.ConnectMongo()
+	database.InitMongoDB()
 
 	schemaName := "marketplace"
 	createSchema(database.DB, schemaName)

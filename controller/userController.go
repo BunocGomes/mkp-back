@@ -104,7 +104,6 @@ func Login(c *gin.Context) {
 
 	token, err := service.Login(loginDTO)
 	if err != nil {
-		// Retorna 401 Unauthorized para qualquer erro de login
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}

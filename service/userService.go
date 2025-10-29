@@ -71,8 +71,6 @@ func GetUserByID(id uint) (dto.UserResponseDTO, error) {
 func UpdateUser(id uint, userDTO dto.UpdateUserDTO) (dto.UserResponseDTO, error) {
 	var user models.User
 
-	// Não precisamos mais de uma transação aqui, pois só alteramos uma tabela.
-	// O Preload("Perfil") ainda é útil para retornar a resposta completa.
 	if err := database.DB.Preload("Perfil").First(&user, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return dto.UserResponseDTO{}, errors.New("usuário não encontrado")
@@ -80,16 +78,13 @@ func UpdateUser(id uint, userDTO dto.UpdateUserDTO) (dto.UserResponseDTO, error)
 		return dto.UserResponseDTO{}, err
 	}
 
-	// Atualiza os campos do User se forem fornecidos no DTO
 	if userDTO.Nome != nil {
 		user.Nome = *userDTO.Nome
 	}
 	if userDTO.Email != nil {
-		// Opcional: Verificar se o novo e-mail já existe antes de atribuir
 		user.Email = *userDTO.Email
 	}
 
-	// Salva as alterações apenas na tabela 'users'.
 	if err := database.DB.Save(&user).Error; err != nil {
 		return dto.UserResponseDTO{}, err
 	}
