@@ -27,6 +27,7 @@ func main() {
 	routes.SetupProposaltRoutes(router)
 	routes.SetupContractRoutes(router)
 	routes.SetupChatRoutes(router, hub)
+	routes.SetupAvaliacaoRoutes(router)
 
 	log.Println("Servidor iniciado em http://localhost:8080")
 	router.Run(":8080")

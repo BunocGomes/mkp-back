@@ -8,10 +8,12 @@ import (
 
 type Contrato struct {
 	gorm.Model
-	ValorFinal      float64   `gorm:"type:decimal(10,2);not null"`
-	DataInicio      time.Time `gorm:"not null"`
-	DataFimPrevista time.Time `gorm:"not null"`
-	Status          string    `gorm:"size:50;default:'ativo'"`
+	ValorFinal            float64   `gorm:"type:decimal(10,2);not null"`
+	DataInicio            time.Time `gorm:"not null"`
+	DataFimPrevista       time.Time `gorm:"not null"`
+	Status                string    `gorm:"size:50;default:'ativo'"`
+	AvaliacaoEmpresaID    *uint     
+	AvaliacaoFreelancerID *uint     
 
 	ProjetoID uint    `gorm:"not null"`
 	Projeto   Projeto `gorm:"foreignKey:ProjetoID"`
