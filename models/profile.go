@@ -4,14 +4,16 @@ import "gorm.io/gorm"
 
 type Perfil struct {
 	gorm.Model
-	UsuarioID      uint            `json:"usuario_id"`
-	Role           string          `gorm:"type:varchar(50);not null" json:"role"`
-	Titulo         string          `gorm:"size:100" json:"titulo"`
-	Bio            string          `gorm:"type:text" json:"bio"`
-	AvatarURL      string          `json:"avatar_url"`
-	Skills         []*Skill        `gorm:"many2many:perfil_skills;" json:"skills"`
-	PortfolioItems []PortfolioItem `gorm:"foreignKey:PerfilID" json:"portfolio_items"`
-	SocialLinks    []SocialLink    `gorm:"foreignKey:PerfilID" json:"social_links"`
+	UsuarioID       uint            `json:"usuario_id"`
+	Role            string          `gorm:"type:varchar(50);not null" json:"role"`
+	Titulo          string          `gorm:"size:100" json:"titulo"`
+	Bio             string          `gorm:"type:text" json:"bio"`
+	NotaMedia       float64         `gorm:"default:0"`
+	TotalAvaliacoes uint            `gorm:"default:0"`
+	AvatarURL       string          `json:"avatar_url"`
+	Skills          []*Skill        `gorm:"many2many:perfil_skills;" json:"skills"`
+	PortfolioItems  []PortfolioItem `gorm:"foreignKey:PerfilID" json:"portfolio_items"`
+	SocialLinks     []SocialLink    `gorm:"foreignKey:PerfilID" json:"social_links"`
 }
 
 type Skill struct {
