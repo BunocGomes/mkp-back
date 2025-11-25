@@ -7,7 +7,7 @@ import (
 )
 
 func SetupProposaltRoutes(router *gin.Engine) {
-	proposal := router.Group("/proposals")
+	proposal := router.Group("/api/v1/proposals")
 	proposal.Use(middleware.AuthMiddleware())
 	{
 		proposal.POST("/", controller.CreateProposta)

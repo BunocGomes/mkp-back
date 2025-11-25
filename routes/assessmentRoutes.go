@@ -7,7 +7,7 @@ import (
 )
 
 func SetupAvaliacaoRoutes(router *gin.Engine) {
-	avaliacoes := router.Group("/avaliacoes")
+	avaliacoes := router.Group("/api/v1/avaliacoes")
 	avaliacoes.Use(middleware.AuthMiddleware()) // Requer autenticação
 	{
 		avaliacoes.POST("/", controller.CreateAvaliacao)

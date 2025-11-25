@@ -10,6 +10,9 @@ type ContratoResponseDTO struct {
 	DataFimPrevista time.Time `json:"data_fim_prevista"`
 	Status          string    `json:"status"`
 	ProjetoID       uint      `json:"projeto_id"`
+	EmpresaID       uint      `json:"empresa_id"`
+	EmpresaUserID   uint      `json:"empresa_user_id"` 
+	FreelancerID    uint      `json:"freelancer_id"`
 
 	ProjetoTitulo  string `json:"projeto_titulo"`  // Campo extra para conveniência
 	EmpresaNome    string `json:"empresa_nome"`    // Campo extra para conveniência

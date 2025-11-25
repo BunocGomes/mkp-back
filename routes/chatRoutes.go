@@ -9,7 +9,7 @@ import (
 
 func SetupChatRoutes(router *gin.Engine, hub *chat.Hub) {
 
-	chatGroup := router.Group("/chat")
+	chatGroup := router.Group("/api/v1/chat")
 	chatGroup.Use(middleware.AuthMiddleware())
 	{
 		chatGroup.GET("/history/:userID", controller.GetMessageHistory)

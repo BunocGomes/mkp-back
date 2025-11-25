@@ -28,7 +28,7 @@ func GetProfileByUserID(c *gin.Context) {
 // UpdateMyProfile é o handler para o usuário logado atualizar seu próprio perfil.
 func UpdateMyProfile(c *gin.Context) {
 	// 1. O userID é injetado pelo middleware de autenticação.
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("userId")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Contexto de usuário inválido"})
 		return

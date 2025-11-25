@@ -7,7 +7,7 @@ import (
 )
 
 func SetupProjectRoutes(router *gin.Engine) {
-	projetos := router.Group("/projetos")
+	projetos := router.Group("/api/v1/projetos")
 
 	projetos.Use(middleware.AuthMiddleware())
 
