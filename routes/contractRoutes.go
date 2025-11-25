@@ -7,9 +7,10 @@ import (
 )
 
 func SetupContractRoutes(router *gin.Engine) {
-	contract := router.Group("/contracts")
+	contract := router.Group("/api/v1/contracts")
 	contract.Use(middleware.AuthMiddleware())
 	{
 		contract.GET("/meus", controller.GetMeusContratos)
+		contract.PATCH("/:id/status", controller.UpdateContractStatus)
 	}
 }

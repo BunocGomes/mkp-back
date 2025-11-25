@@ -136,41 +136,54 @@ func NewHub() *Hub {
 func (h *Hub) Run() {
 	for {
 		select {
-		// h.Register (capitalizado)
 		case client := <-h.Register:
-			h.clients[client.UserID] = client // (UserID do cliente)
+			h.clients[client.UserID] = client
+			log.Printf("🟢 CONECTOU: UserID %d (Total online: %d)", client.UserID, len(h.clients))
 
-		// h.Unregister (capitalizado)
 		case client := <-h.Unregister:
 			if _, ok := h.clients[client.UserID]; ok {
 				delete(h.clients, client.UserID)
-				close(client.Send) // (Send do cliente)
+				close(client.Send)
+				log.Printf("🔴 DESCONECTOU: UserID %d (Total online: %d)", client.UserID, len(h.clients))
 			}
 
-		// h.Broadcast (capitalizado)
 		case message := <-h.Broadcast:
+			// --- BLOCO DE DEBUG NOVO ---
+			onlineIDs := []uint{}
+			for id := range h.clients {
+				onlineIDs = append(onlineIDs, id)
+			}
+			log.Printf("🔍 DEBUG: Tentando enviar de %d para %d", message.RemetenteID, message.DestinatarioID)
+			log.Printf("📋 LISTA DE ONLINE: %v", onlineIDs)
+			// ---------------------------
+
 			messageBytes, err := json.Marshal(message)
 			if err != nil {
-				log.Printf("erro ao codificar mensagem para json: %v", err)
+				log.Printf("❌ Erro JSON: %v", err)
 				continue
 			}
 
-			// Lógica de Envio Direto
+			// 1. Envia para o DESTINATÁRIO
 			if client, ok := h.clients[message.DestinatarioID]; ok {
 				select {
-				case client.Send <- messageBytes: // (Send do cliente)
+				case client.Send <- messageBytes:
+					log.Printf("✅ ENTREGUE para %d", message.DestinatarioID)
 				default:
 					close(client.Send)
-					delete(h.clients, client.UserID)
+					delete(h.clients, message.DestinatarioID)
 				}
+			} else {
+				log.Printf("⚠️ FALHA: %d não está no mapa %v", message.DestinatarioID, onlineIDs)
 			}
 
+			// 2. Envia para o REMETENTE
 			if client, ok := h.clients[message.RemetenteID]; ok {
 				select {
-				case client.Send <- messageBytes: // (Send do cliente)
+				case client.Send <- messageBytes:
+					// Sucesso silencioso para o remetente
 				default:
 					close(client.Send)
-					delete(h.clients, client.UserID)
+					delete(h.clients, message.RemetenteID)
 				}
 			}
 		}
