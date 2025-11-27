@@ -62,29 +62,53 @@ func GetMeusContratos(userID uint, role string) ([]dto.ContratoResponseDTO, erro
 }
 
 func UpdateContractStatus(contratoID uint, userID uint, novoStatus string) error {
+	// Usamos uma transação para garantir consistência
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
 	var contrato models.Contrato
-	if err := database.DB.First(&contrato, contratoID).Error; err != nil {
+	if err := tx.First(&contrato, contratoID).Error; err != nil {
+		tx.Rollback()
 		return errors.New("contrato não encontrado")
 	}
 
-	// Verificação de Segurança: Apenas as partes envolvidas podem alterar
-	// Precisamos verificar se o userID é da Empresa ou do Freelancer deste contrato
-	// Nota: Para simplificar, assumimos que o userID passado já foi validado pelo controller
-	// Mas idealmente, faríamos:
-	// if contrato.EmpresaID != user.EmpresaID && contrato.FreelancerID != userID { return erro }
-
 	// Regra de Negócio: Só pode mudar se estiver "ativo"
 	if contrato.Status != "ativo" {
+		tx.Rollback()
 		return errors.New("apenas contratos ativos podem ser alterados")
 	}
 
 	if novoStatus != "concluido" && novoStatus != "cancelado" {
+		tx.Rollback()
 		return errors.New("status inválido")
 	}
 
+	// 1. Atualiza o status do contrato
 	contrato.Status = novoStatus
-	// Se concluído, definimos a data real de fim (opcional, mas bom)
-	// contrato.DataFim = time.Now()
+	if err := tx.Save(&contrato).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
 
-	return database.DB.Save(&contrato).Error
+	// 2. Se o contrato foi CONCLUÍDO, atualiza o Projeto também
+	if novoStatus == "concluido" {
+		var projeto models.Projeto
+		if err := tx.First(&projeto, contrato.ProjetoID).Error; err != nil {
+			tx.Rollback()
+			return errors.New("projeto associado não encontrado")
+		}
+
+		// Atualiza status do projeto para 'concluido'
+		if err := tx.Model(&projeto).Update("status", "concluido").Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// 3. Se o contrato foi CANCELADO, talvez queira reabrir o projeto?
+	// (Opcional: projeto.Status = "aberto") - Por enquanto vamos manter como está.
+
+	return tx.Commit().Error
 }
